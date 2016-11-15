@@ -24,7 +24,7 @@ static void CheckCudaErrorAux (const char *, unsigned, const char *, cudaError_t
 #define CUDA_CHECK_RETURN(value) CheckCudaErrorAux(__FILE__,__LINE__, #value, value)
 
 /*
- * Device kernel that compares the provides PSF distribution to the distribution
+ * Device kernel that compares the provided PSF distribution to the distribution
  * around each pixel in the provided image
  */
 __global__ void convolvePSF(int width, int height, int imageCount, short *image, short *results,
@@ -83,8 +83,6 @@ int main(int argc, char* argv[])
 	gen->printPSF(test);
 
 	FakeAsteroid *asteroid = new FakeAsteroid();
-
-
 
 
 	/// Image/FITS Properties ///
@@ -187,7 +185,6 @@ int main(int argc, char* argv[])
 		fits_report_error(stderr, status);
 
 	}
-
 
 	// Finished!
 
