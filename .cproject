@@ -27,7 +27,11 @@
 								<option id="nvcc.compiler.option.level.737204286" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
 								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.521958658" name="Optimization Level" superClass="nvcc.compiler.optimization.level" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.1480405621" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
-								<option id="nvcc.compiler.cpp11option.575379691" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.cpp11option.575379691" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.optionsfile.1697945608" name="Command line options file (-optf)" superClass="nvcc.compiler.optionsfile" value="" valueType="string"/>
+								<option id="nvcc.compiler.compileroptions.1270216721" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
+									<listOptionValue builtIn="false" value="-fopenmp"/>
+								</option>
 								<inputType id="nvcc.compiler.input.cu.1423822997" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.154624890" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1123678685" superClass="nvcc.compiler.input.c"/>
@@ -37,6 +41,13 @@
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="cfitsio"/>
 								</option>
+								<option id="nvcc.linker.option.userobjs.1584588927" name="Other objects" superClass="nvcc.linker.option.userobjs" valueType="userObjs"/>
+								<option id="nvcc.linker.option.other.1854334715" name="Other options (-Xlinker [option])" superClass="nvcc.linker.option.other" valueType="stringList">
+									<listOptionValue builtIn="false" value="-lgomp"/>
+								</option>
+								<option id="nvcc.linker.option.shared.631610091" name="Shared (-shared)" superClass="nvcc.linker.option.shared" value="false" valueType="boolean"/>
+								<option id="nvcc.linker.option.paths.1130888964" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths"/>
+								<option id="nvcc.linker.option.cudart.55976324" name="CUDA Runtime Library:" superClass="nvcc.linker.option.cudart" value="nvcc.linker.option.cudart.static" valueType="enumerated"/>
 								<inputType id="nvcc.linker.input.131606396" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

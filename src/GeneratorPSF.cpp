@@ -38,12 +38,11 @@ psfMatrix GeneratorPSF::createGaussian(float stdev)
 
 	psfMatrix p;
 	p.dim = 2*i-1;
-	p.kernel = new float*[p.dim];
+	p.kernel = new float[p.dim*p.dim];
 	for (int ii=0; ii<p.dim; ++ii)
 	{
-		p.kernel[ii] = new float[p.dim];
 		for (int jj=0; jj<p.dim; ++jj)
-			p.kernel[ii][jj] = simpleGauss[abs(i-ii-1)]*simpleGauss[abs(i-jj-1)];
+			p.kernel[ii*p.dim+jj] = simpleGauss[abs(i-ii-1)]*simpleGauss[abs(i-jj-1)];
 	}
 
 	return p;
@@ -64,8 +63,8 @@ void GeneratorPSF::printPSF(psfMatrix p)
 		std::cout << "| ";
 		for (int col=0; col<p.dim; ++col)
 			{
-				sum += p.kernel[row][col];
-				std::cout << p.kernel[row][col] << " | ";
+				sum += p.kernel[row*p.dim+col];
+				std::cout << p.kernel[row*p.dim+col] << " | ";
 			}
 		std::cout << "\n ";
 	    for (int space=0; space<p.dim*8-1; ++space)

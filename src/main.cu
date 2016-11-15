@@ -12,6 +12,8 @@
 #include <numeric>
 #include <stdlib.h>
 #include <cstdlib>
+#include <sstream>
+#include <ctime>
 
 #include <fitsio.h>
 #include "GeneratorPSF.h"
@@ -28,6 +30,48 @@ __global__ void reciprocalKernel(float *data, unsigned vectorSize) {
 	unsigned idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if (idx < vectorSize)
 		data[idx] = 1.0/data[idx];
+}
+
+__global__ void convolvePSF(int width, int height, int imageCount, short *images, short *results,
+		float *psf, int psfRad, int psfDim)
+{
+	// Test bounds of image
+	const int x = blockIdx.x*32+threadIdx.x;
+	const int y = blockIdx.y*32+threadIdx.y;
+	const int minX = max(x-psfRad, 0);
+	const int minY = max(y-psfRad, 0);
+	const int maxX = min(x+psfRad, width);
+	const int maxY = min(y+psfRad, height);
+	const int dx = maxX-minX;
+	const int dy = maxY-minY;
+	if (dx < 1 || dy < 1) return;
+	// Read Image
+	__shared__ float convArea[5][5]; //convArea[dx][dy];
+
+	float sum = 0.0;
+	for (int i=0; i<dx; ++i)
+	{
+		for (int j=0; j<dy; ++j)
+		{
+			float value = float(images[0*width*height+(minX+i)*height+minY+j]);
+			sum += value;
+			convArea[i][j] = value;
+		}
+	}
+	/*
+	int xCorrection = x-psfRad < 0 ? 0 : psfDim-dx;
+	int yCorrection = y-psfRad < 0 ? 0 : psfDim-dy;
+	float sumDifference = 0.0;
+	for (int i=0; i<dx; ++i)
+	{
+		for (int j=0; j<dy; ++j)
+		{
+			sumDifference += abs(convArea[i][j]/sum - psf[(i+xCorrection)*psfDim+j+yCorrection] );
+		}
+	}
+	*/
+	results[0*width*height+x*height+y] = images[0*width*height+x*height+y];//int(5000*convArea[psfRad][psfRad]);
+
 }
 
 /**
@@ -66,9 +110,9 @@ void initialize(float *data, unsigned size)
 int main(int argc, char* argv[])
 {
 
+	float psfSigma = argc > 1 ? atof(argv[1]) : 1.0;
 
-	float psfSigma = 1.0;
-	if (argc > 1) psfSigma = atof(argv[1]);
+	int imageCount = argc > 2 ? atoi(argv[2]) : 1;
 
 	GeneratorPSF *gen = new GeneratorPSF();
 
@@ -80,42 +124,87 @@ int main(int argc, char* argv[])
 
 
 
-
-
 	////////////////////////////////
 	fitsfile *fptr;
 	/* pointer to the FITS file; defined in fitsio.h */
 	int status;
 	long fpixel = 1, naxis = 2, nelements;//, exposure;
-	long naxes[2] = { 800, 600 };
-	/* image is 300 pixels wide by 200 rows */
-	short *array = new short[naxes[0]*naxes[1]];
-	//short array[200][300];
-	status = 0;
-	/* initialize status before calling fitsio routines */
-	fits_create_file(&fptr, "testfile.fits", &status);
-	/* create new file */
-	/* Create the primary array image (16-bit short integer pixels */
-	fits_create_img(fptr, SHORT_IMG, naxis, naxes, &status);
-	/* Write a keyword; must pass the ADDRESS of the value */
-
-	/* Initialize the values in the image with noisy astro */
-
-	asteroid->createImage(array, naxes[0], naxes[1], 0.5, 0.5, test, 50.0, 1.0);
-	/*
-	int ii, jj;
-	for (jj = 0; jj < naxes[1]; jj++)
-		for (ii = 0; ii < naxes[0]; ii++)
-			array[jj*naxes[0]+ii] = ii + jj;
-	*/
+	long naxes[2] = { 1024, 1024 }; // X and Y dimensions
 	nelements = naxes[0] * naxes[1];
+	std::stringstream ss;
+	short **pixelArray = new short*[imageCount];//naxes[0]*naxes[1]];
+	//short array[200][300];
 
-	/* number of pixels to write */
-	/* Write the array of integers to the image */
-	fits_write_img(fptr, TSHORT, fpixel, nelements, array, &status);
-	fits_close_file(fptr, &status);
-	fits_report_error(stderr, status);
-	////return( status );
+	std::clock_t t1 = std::clock();
+
+	// Create asteroid images
+	for (int imageIndex=0; imageIndex<imageCount; ++imageIndex)
+	{
+
+		/* Initialize the values in the image with noisy astro */
+
+		float kernelNorm = 1.0/test.kernel[test.dim/2*test.dim+test.dim/2];
+
+		pixelArray[imageIndex] = new short[nelements];
+		asteroid->createImage(pixelArray[imageIndex], naxes[0], naxes[1],
+				0.03*float(imageIndex)+0.25, 0.04*float(imageIndex)+0.2, test, 850.0*kernelNorm, 0.5);
+
+	}
+
+
+	// Process images on GPU
+	short *result = new short[nelements];
+	float *gpuPsf;
+	short *gpuImageSource;
+	short *gpuImageResult;
+
+	CUDA_CHECK_RETURN(cudaMalloc((void **)&gpuPsf, sizeof(float)*test.dim*test.dim));
+	CUDA_CHECK_RETURN(cudaMalloc((void **)&gpuImageSource, sizeof(short)*nelements));
+	CUDA_CHECK_RETURN(cudaMalloc((void **)&gpuImageResult, sizeof(short)*nelements));
+
+	CUDA_CHECK_RETURN(cudaMemcpy(gpuPsf, test.kernel, sizeof(float)*test.dim*test.dim, cudaMemcpyHostToDevice));
+	CUDA_CHECK_RETURN(cudaMemcpy(gpuImageSource, pixelArray[0], sizeof(short)*nelements, cudaMemcpyHostToDevice));
+
+	dim3 blocks(32,32);
+	dim3 threads(32,32);
+
+	convolvePSF<<<blocks, threads>>> (naxes[0], naxes[1], imageCount, gpuImageSource,
+			gpuImageResult, test.kernel, test.dim/2, test.dim); //gpuData, size);
+
+	CUDA_CHECK_RETURN(cudaMemcpy(result, gpuImageResult, sizeof(short)*nelements, cudaMemcpyDeviceToHost));
+	CUDA_CHECK_RETURN(cudaFree(gpuPsf));
+	CUDA_CHECK_RETURN(cudaFree(gpuImageSource));
+	CUDA_CHECK_RETURN(cudaFree(gpuImageResult));
+
+	std::clock_t t2 = std::clock();
+
+	std::cout << imageCount << " images, " <<
+			1000.0*(t2 - t1)/(double) (CLOCKS_PER_SEC*imageCount) << " ms per image\n";
+
+
+	// Write images to file
+	for (int writeIndex=0; writeIndex<imageCount; ++writeIndex)
+	{
+		status = 0;
+		/* initialize status before calling fitsio routines */
+		ss << "Asteroid" << writeIndex+1 << ".fits";
+		fits_create_file(&fptr, ss.str().c_str(), &status);
+		ss.str("");
+		ss.clear();
+		/* create new file */
+		/* Create the primary array image (16-bit short integer pixels */
+		fits_create_img(fptr, SHORT_IMG, naxis, naxes, &status);
+		/* Write a keyword; must pass the ADDRESS of the value */
+
+		/* number of pixels to write */
+		/* Write the array of integers to the image */
+		fits_write_img(fptr, TSHORT, fpixel, nelements, result/*pixelArray[writeIndex]*/, &status);
+		fits_close_file(fptr, &status);
+		fits_report_error(stderr, status);
+		////return( status );
+	}
+
+
 
 
 
@@ -138,6 +227,8 @@ int main(int argc, char* argv[])
 	delete[] data;
 	delete[] recCpu;
 	delete[] recGpu;
+
+	delete[] pixelArray;
 
 	return 0;
 }

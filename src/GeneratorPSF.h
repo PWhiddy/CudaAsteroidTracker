@@ -12,7 +12,7 @@
 #include <iostream>
 
 struct psfMatrix {
-	float **kernel;
+	float *kernel;
 	unsigned int dim;
 };
 

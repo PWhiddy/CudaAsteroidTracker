@@ -188,6 +188,7 @@ src/FakeAsteroid.o : ../src/FakeAsteroid.cpp \
     /usr/include/c++/5/bits/random.tcc \
     /usr/include/c++/5/numeric \
     /usr/include/c++/5/bits/stl_numeric.h \
+    /usr/lib/gcc/x86_64-linux-gnu/5/include/omp.h \
     /usr/include/fitsio.h \
     /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h \
     /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/syslimits.h \

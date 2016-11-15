@@ -205,6 +205,9 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/5/bits/istream.tcc \
     /usr/include/c++/5/numeric \
     /usr/include/c++/5/bits/stl_numeric.h \
+    /usr/include/c++/5/sstream \
+    /usr/include/c++/5/bits/sstream.tcc \
+    /usr/include/c++/5/ctime \
     /usr/include/fitsio.h \
     /usr/include/longnam.h \
     ../src/GeneratorPSF.h \
@@ -273,4 +276,5 @@ src/main.o : ../src/main.cu \
     /usr/lib/gcc/x86_64-linux-gnu/5/include/xsavesintrin.h \
     /usr/lib/gcc/x86_64-linux-gnu/5/include/xsavecintrin.h \
     /usr/lib/gcc/x86_64-linux-gnu/5/include/mwaitxintrin.h \
-    /usr/include/c++/5/bits/random.tcc
+    /usr/include/c++/5/bits/random.tcc \
+    /usr/lib/gcc/x86_64-linux-gnu/5/include/omp.h
