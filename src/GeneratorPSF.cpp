@@ -6,7 +6,6 @@
  */
 
 #define MAX_KERNEL_RADIUS 7
-#define INTEGRATION_STEPS 100000
 
 #include "GeneratorPSF.h"
 
