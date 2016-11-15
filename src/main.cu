@@ -40,7 +40,7 @@ float *gpuReciprocal(float *data, unsigned size)
 
 	CUDA_CHECK_RETURN(cudaMalloc((void **)&gpuData, sizeof(float)*size));
 	CUDA_CHECK_RETURN(cudaMemcpy(gpuData, data, sizeof(float)*size, cudaMemcpyHostToDevice));
-	
+
 	static const int BLOCK_SIZE = 256;
 	const int blockCount = (size+BLOCK_SIZE-1)/BLOCK_SIZE;
 	reciprocalKernel<<<blockCount, BLOCK_SIZE>>> (gpuData, size);
@@ -57,7 +57,6 @@ float *cpuReciprocal(float *data, unsigned size)
 	return rc;
 }
 
-
 void initialize(float *data, unsigned size)
 {
 	for (unsigned i = 0; i < size; ++i)
@@ -73,19 +72,25 @@ int main(int argc, char* argv[])
 
 	GeneratorPSF *gen = new GeneratorPSF();
 
-	psfTable test = gen->createGaussian(psfSigma);
+	psfMatrix test = gen->createGaussian(psfSigma);
 
 	gen->printPSF(test);
+
+	FakeAsteroid *asteroid = new FakeAsteroid();
+
+
+
 
 
 	////////////////////////////////
 	fitsfile *fptr;
 	/* pointer to the FITS file; defined in fitsio.h */
-	int status, ii, jj;
-	long fpixel = 1, naxis = 2, nelements, exposure;
-	long naxes[2] = { 300, 200 };
+	int status;
+	long fpixel = 1, naxis = 2, nelements;//, exposure;
+	long naxes[2] = { 800, 600 };
 	/* image is 300 pixels wide by 200 rows */
-	short array[200][300];
+	short *array = new short[naxes[0]*naxes[1]];
+	//short array[200][300];
 	status = 0;
 	/* initialize status before calling fitsio routines */
 	fits_create_file(&fptr, "testfile.fits", &status);
@@ -93,22 +98,24 @@ int main(int argc, char* argv[])
 	/* Create the primary array image (16-bit short integer pixels */
 	fits_create_img(fptr, SHORT_IMG, naxis, naxes, &status);
 	/* Write a keyword; must pass the ADDRESS of the value */
-	exposure = 1500.;
-	fits_update_key(fptr, TLONG, "EXPOSURE", &exposure,
-	"Total Exposure Time", &status);
-	/* Initialize the values in the image with a linear ramp function */
+
+	/* Initialize the values in the image with noisy astro */
+
+	asteroid->createImage(array, naxes[0], naxes[1], 0.5, 0.5, test, 50.0, 1.0);
+	/*
+	int ii, jj;
 	for (jj = 0; jj < naxes[1]; jj++)
 		for (ii = 0; ii < naxes[0]; ii++)
-			array[jj][ii] = ii + jj;
-
+			array[jj*naxes[0]+ii] = ii + jj;
+	*/
 	nelements = naxes[0] * naxes[1];
 
 	/* number of pixels to write */
 	/* Write the array of integers to the image */
-	fits_write_img(fptr, TSHORT, fpixel, nelements, array[0], &status);
+	fits_write_img(fptr, TSHORT, fpixel, nelements, array, &status);
 	fits_close_file(fptr, &status);
 	fits_report_error(stderr, status);
-	//return( status );
+	////return( status );
 
 
 

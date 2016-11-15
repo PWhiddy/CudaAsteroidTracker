@@ -8,17 +8,22 @@
 #include "FakeAsteroid.h"
 
 FakeAsteroid::FakeAsteroid(){
-	std::uniform_int_distribution<int> noise(0,SHRT_MAX);
+	std::normal_distribution<double> noise(1000.0, 200.0);
 };
 
-short **FakeAsteroid::createImage(int width, int height, float xpos, float ypos, psfTable psf, float noiseLevel)
+void FakeAsteroid::createImage(short *image, int width, int height,
+	float xpos, float ypos, psfMatrix psf, float asteroidLevel, float noiseLevel)
 {
-	short** image = new short*[width];
-	for (int i=0; i<width; ++i)
+	int xPixel = int(xpos * width);
+	int yPixel = int(ypos * height);
+	int psfMid = psf.dim / 2;
+	for (int i=0; i<height; ++i)
 	{
-		image[i] = new short[height];
-		for (int j=0; j<height; +j)
-			image[i][j] = noise(generator);
+		int dy = i-yPixel;
+		for (int j=0; j<width; ++j) {
+			int dx = j-xPixel;
+			float asteroid = abs(dx) < psfMid && abs(dy) < psfMid ? asteroidLevel*psf.kernel[dx+psfMid][dy+psfMid] : 0.0;
+			image[i*width+j] = 100*int(std::max(noise(generator), 0.0)*noiseLevel + asteroid);
+		}
 	}
-	return image;
 }

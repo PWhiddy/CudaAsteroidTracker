@@ -11,7 +11,7 @@
 #include <cmath>
 #include <iostream>
 
-struct psfTable {
+struct psfMatrix {
 	float **kernel;
 	unsigned int dim;
 };
@@ -20,8 +20,8 @@ class GeneratorPSF
 {
 	public:
 		GeneratorPSF();
-		psfTable createGaussian(float stdev);
-		void printPSF(psfTable p);
+		psfMatrix createGaussian(float stdev);
+		void printPSF(psfMatrix p);
 	private:
 		float gaussian(float x, float stdev);
 };

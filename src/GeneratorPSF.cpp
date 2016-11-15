@@ -12,7 +12,7 @@
 
 GeneratorPSF::GeneratorPSF(){}
 
-psfTable GeneratorPSF::createGaussian(float stdev)
+psfMatrix GeneratorPSF::createGaussian(float stdev)
 {
 
 	float simpleGauss[MAX_KERNEL_RADIUS];
@@ -36,7 +36,7 @@ psfTable GeneratorPSF::createGaussian(float stdev)
 
 	std::cout << "Using Kernel Size " << 2*i-1 << "X" << 2*i-1 << "\n";
 
-	psfTable p;
+	psfMatrix p;
 	p.dim = 2*i-1;
 	p.kernel = new float*[p.dim];
 	for (int ii=0; ii<p.dim; ++ii)
@@ -54,7 +54,7 @@ float GeneratorPSF::gaussian(float x, float twoSigSquare)
 	return exp(-x*x/(twoSigSquare));
 }
 
-void GeneratorPSF::printPSF(psfTable p)
+void GeneratorPSF::printPSF(psfMatrix p)
 {
     std::cout.setf(std::ios::fixed,std::ios::floatfield);
     std::cout.precision(3);

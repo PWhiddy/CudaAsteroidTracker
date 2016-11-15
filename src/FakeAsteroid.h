@@ -16,10 +16,11 @@ class FakeAsteroid
 {
 	public:
 		FakeAsteroid();
-		short **createImage(int width, int height, float xpos, float ypox, psfTable psf, float noiseLevel);
+		void createImage(short *image, int width, int height,
+			float xpos, float ypox, psfMatrix psf, float asteroidLevel, float noiseLevel);
 	private:
 		std::default_random_engine generator;
-		std::uniform_int_distribution<int> noise;
+		std::normal_distribution<double> noise;
 		//int dice_roll = distribution(generator);  // generates number in the range 1..6
 };
 
